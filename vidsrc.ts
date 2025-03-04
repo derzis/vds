@@ -30,16 +30,30 @@ interface RCPResponse {
   };
   data: string;
 }
-async function serversLoad(html): Promise<Servers[]> {
+async function serversLoad(html: string): Promise<Servers[]> {
   const $ = cheerio.load(html);
   const servers: Servers[] = [];
+  const title = $("title").text() ?? "";
+  
+  // Găsește iframe-ul pentru player
+  const base = $("iframe#player_iframe").attr("src") ?? "";
+  if (base.startsWith("//")) {
+    BASEDOM = "https:" + base;
+  } else if (base.startsWith("http")) {
+    BASEDOM = base;
+  }
+  BASEDOM = new URL(BASEDOM).origin; // Extrage doar domeniul de bază
+
+  console.log("Updated BASEDOM:", BASEDOM); // DEBUG
+
   $(".serversList .server").each((index, element) => {
     const server = $(element);
     servers.push({
       name: server.text().trim(),
-      dataHash: server.attr("data-hash"),
+      dataHash: server.attr("data-hash") ?? null,
     });
   });
+  
   return servers;
 }
 async function SRCRCPhandler() {
