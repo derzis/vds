@@ -30,12 +30,22 @@ interface RCPResponse {
   };
   data: string;
 }
-async function serversLoad(html: string): Promise<{ servers: Servers[]; title: string }> {
+async function serversLoad(html: string): Promise<Servers[]> {
   const $ = cheerio.load(html);
   const servers: Servers[] = [];
   const title = $("title").text() ?? "";
-  const base = $("iframe").attr("src") ?? "";
-  BASEDOM = new URL(base.startsWith("//") ? "https:" + base : base).origin ?? BASEDOM;
+  
+  // Găsește iframe-ul pentru player
+  const base = $("iframe#player_iframe").attr("src") ?? "";
+  if (base.startsWith("//")) {
+    BASEDOM = "https:" + base;
+  } else if (base.startsWith("http")) {
+    BASEDOM = base;
+  }
+  BASEDOM = new URL(BASEDOM).origin; // Extrage doar domeniul de bază
+
+  console.log("Updated BASEDOM:", BASEDOM); // DEBUG
+
   $(".serversList .server").each((index, element) => {
     const server = $(element);
     servers.push({
@@ -43,10 +53,8 @@ async function serversLoad(html: string): Promise<{ servers: Servers[]; title: s
       dataHash: server.attr("data-hash") ?? null,
     });
   });
-  return {
-    servers: servers,
-    title: title,
-  };
+  
+  return servers;
 }
 async function SRCRCPhandler() {
 }
